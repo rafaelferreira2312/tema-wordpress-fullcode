@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  wordpress:
+    image: wordpress:${WORDPRESS_VERSION:-latest}
+    container_name: wp-rafael-base
+    depends_on:
+      - mysql
+    ports:
+      - "${WORDPRESS_PORT:-8080}:80"
+    volumes:
+      - ./themes/rafael-base:/var/www/html/wp-content/themes/rafael-base
+      - ./wordpress:/var/www/html
+      - ./config/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+    environment:
+      WORDPRESS_DB_HOST: mysql
+      WORDPRESS_DB_USER: ${MYSQL_USER:-wordpress}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD:-wordpress}
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE:-wordpress}
+    networks:
+      - wordpress-network
+
+  mysql:
+    image: mysql:${MYSQL_VERSION:-8.0}
+    container_name: wp-mysql
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./config/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-wordpress}
+      MYSQL_USER: ${MYSQL_USER:-wordpress}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-wordpress}
+    networks:
+      - wordpress-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: wp-phpmyadmin
+    depends_on:
+      - mysql
+    ports:
+      - "${PHPMYADMIN_PORT:-8081}:80"
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    networks:
+      - wordpress-network
+
+networks:
+  wordpress-network:
+    driver: bridge
